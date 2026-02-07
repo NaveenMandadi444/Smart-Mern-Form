@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: visionform-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - visionform-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: visionform-backend
+    ports:
+      - "5000:5000"
+    environment:
+      MONGODB_URI: mongodb://admin:password@mongodb:27017/visionform?authSource=admin
+      JWT_SECRET: your_jwt_secret_key_change_in_production
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY}
+      NODE_ENV: production
+      FRONTEND_URL: http://localhost:5173
+    depends_on:
+      - mongodb
+    networks:
+      - visionform-network
+    volumes:
+      - ./backend/uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: visionform-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:5000
+    depends_on:
+      - backend
+    networks:
+      - visionform-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  visionform-network:
+    driver: bridge
