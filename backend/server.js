@@ -29,6 +29,7 @@ import autofillRoutes from "./routes/autofillRoutes.js";
 import ambiguityRoutes from "./routes/ambiguityRoutes.js";
 import formRoutes from "./routes/formRoutes.js";
 import statsRoutes from "./routes/statsRoutes.js";
+import fieldMappingRoutes from "./routes/fieldMappingRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -90,7 +91,7 @@ app.use("/api/autofill", autofillRoutes);
 app.use("/api/ambiguities", ambiguityRoutes);
 app.use("/api/forms", formRoutes);
 app.use("/api/stats", statsRoutes);
-app.use("/api/stats", statsRoutes);
+app.use("/api/field-mapping", fieldMappingRoutes);
 
 // 404 handler
 app.use((req, res) => {

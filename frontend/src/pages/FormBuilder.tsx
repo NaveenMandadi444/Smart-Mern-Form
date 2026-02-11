@@ -1,209 +1,330 @@
 import { useState } from "react";
-import { formService } from "../services/api";
-import { toast } from "sonner";
-import { Upload, FileText, Send, Loader2, Eye, Sparkles } from "lucide-react";
-import ProgressiveFormRenderer from "../components/ProgressiveFormRenderer";
 import { useNavigate } from "react-router-dom";
+import FormBuilderEnhanced from "../components/FormBuilderEnhanced";
+import { Eye, Upload, FileText, Send, Loader2, Sparkles, X, Edit2, Check } from "lucide-react";
+import axios from "axios";
 
 export default function FormBuilder() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"image" | "text">("image");
-  const [loading, setLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [useSmartDetection, setUseSmartDetection] = useState(true);
-
-  // Image upload state
+  const [activeTab, setActiveTab] = useState<"upload" | "paste" | "form">("upload");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-
-  // Text paste state
-  const [pastedText, setPastedText] = useState("");
-
-  // Generated form state
-  const [generatedForm, setGeneratedForm] = useState<any>(null);
-  const [formData, setFormData] = useState<{ [key: string]: any }>({});
-  const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
-
-  // Alternative values modal
-  const [showAlternatives, setShowAlternatives] = useState(false);
-  const [alternativesField, setAlternativesField] = useState<string>("");
-  const [alternatives, setAlternatives] = useState<any[]>([]);
-
-  // Drag and drop state
+  const [pastedText, setPastedText] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [generatedForm, setGeneratedForm] = useState<any[]>([]);
   const [isDraggingImage, setIsDraggingImage] = useState(false);
+  const [currentFormId, setCurrentFormId] = useState<string | null>(null);
+  const [formName, setFormName] = useState<string>("Extracted Form");
+  const [isEditingFormName, setIsEditingFormName] = useState(false);
+  const [tempFormName, setTempFormName] = useState<string>("");
 
-  const processImageFile = (file: File) => {
-    setSelectedImage(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
+  // Default form fields (fallback)
+  const defaultFormFields = [
+    { label: "Full Name", type: "text", required: true },
+    { label: "Date of Birth", type: "date", required: true },
+    { label: "Email ID", type: "email", required: true },
+    { label: "Phone Number", type: "tel", required: false },
+    { label: "Gender", type: "text", required: false },
+    { label: "Father's Name", type: "text", required: false },
+    { label: "Mother's Name", type: "text", required: false },
+    { label: "Address", type: "text", required: false },
+    { label: "10th Percentage", type: "text", required: false },
+    { label: "12th Percentage", type: "text", required: false },
+    { label: "B.Tech CGPA", type: "text", required: false },
+  ];
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      processImageFile(file);
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setImagePreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+      setError(null);
     }
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  // Handle drag and drop
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDraggingImage(true);
   };
 
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleDragLeave = () => {
     setIsDraggingImage(false);
   };
 
-  const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDraggingImage(false);
-
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      if (file.type.startsWith("image/")) {
-        processImageFile(file);
-      } else {
-        toast.error("Please drop an image file");
-      }
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setImagePreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+      setError(null);
     }
   };
 
-  const handleGenerateFromImage = async () => {
+  // Extract form from image
+  const handleExtractFromImage = async () => {
     if (!selectedImage) {
-      toast.error("Please select an image");
+      setError("Please select an image first");
       return;
     }
 
-    try {
-      setLoading(true);
-      
-      // Use smart detection if enabled
-      const result = useSmartDetection 
-        ? await formService.smartGenerateFromImage(selectedImage)
-        : await formService.generateFromImage(selectedImage);
-
-      setGeneratedForm(result.form);
-
-      // Show detection stats for smart mode
-      if (useSmartDetection && result.detectionStats) {
-        toast.success(
-          `Form generated! ${result.detectionStats.validFields} fields detected (filtered out ${result.detectionStats.filteredOut} UI elements)`,
-          { duration: 4000 }
-        );
-      } else {
-        toast.success("Form generated successfully!");
-      }
-
-      // Auto-fill form data with vault values
-      const initialData: { [key: string]: any } = {};
-      result.mappedFields?.forEach((field: any) => {
-        if (field.vaultValue) {
-          initialData[field.label] = field.vaultValue;
-        }
-      });
-      setFormData(initialData);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to generate form");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGenerateFromText = async () => {
-    if (!pastedText.trim()) {
-      toast.error("Please paste form text");
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setError("❌ Authentication failed. Please login again.");
+      console.error("No auth token found. Please login first.");
       return;
     }
 
+    setLoading(true);
+    setError(null);
+
     try {
-      setLoading(true);
-      const result = await formService.generateFromText(pastedText);
+      const formData = new FormData();
+      formData.append("formImage", selectedImage);
 
-      setGeneratedForm(result.form);
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-      // Auto-fill form data with vault values
-      const initialData: { [key: string]: any } = {};
-      result.mappedFields?.forEach((field: any) => {
-        if (field.vaultValue) {
-          initialData[field.label] = field.vaultValue;
+      const response = await axios.post(
+        `${apiUrl}/api/forms/smart-generate-from-image`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
-      setFormData(initialData);
-
-      toast.success("Form generated successfully!");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to generate form");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFieldChange = (label: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [label]: value }));
-    // Clear error for this field
-    if (formErrors[label]) {
-      setFormErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[label];
-        return newErrors;
-      });
-    }
-  };
-
-  const handleShowAlternatives = async (
-    label: string,
-    vaultMappingKey?: string,
-  ) => {
-    try {
-      const result = await formService.getFieldAlternatives(
-        label,
-        vaultMappingKey,
       );
-      setAlternatives(result.alternatives || []);
-      setAlternativesField(label);
-      setShowAlternatives(true);
-    } catch (error) {
-      toast.error("Failed to fetch alternatives");
+
+      const extractedFields = response.data.form?.fields || [];
+      const cleanedFields = extractedFields.map((field: any) => ({
+        label: field.label || field.fieldName || "Unnamed Field",
+        type: field.fieldType || field.type || "text",
+        required: field.required ?? false,
+      }));
+
+      // Capture the form ID and name from the response (smart-generate-from-image creates form in DB)
+      const formId = response.data.form?._id;
+      const extractedFormName = response.data.form?.formName || "Extracted Form";
+      if (formId) {
+        setCurrentFormId(formId);
+        setFormName(extractedFormName);
+        console.log("✅ Form created with ID:", formId, "Name:", extractedFormName);
+      }
+
+      setGeneratedForm(cleanedFields.length > 0 ? cleanedFields : defaultFormFields);
+      setActiveTab("form");
+      setError(null);
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || err.message || "Failed to extract form from image";
+      setError(`❌ ${errorMsg}`);
+      
+      if (err.response?.status === 401) {
+        console.error("Token invalid or expired. Redirecting to login...");
+        setTimeout(() => navigate("/login"), 2000);
+      }
+      
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSelectAlternative = (value: string) => {
-    setFormData((prev) => ({ ...prev, [alternativesField]: value }));
-    setShowAlternatives(false);
-    toast.success("Value updated");
-  };
+  // Extract form from text
+  const handleExtractFromText = async () => {
+    if (!pastedText.trim()) {
+      setError("Please paste form content first");
+      return;
+    }
 
-  const handleSubmitForm = async () => {
-    if (!generatedForm) return;
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setError("❌ Authentication failed. Please login again.");
+      console.error("No auth token found. Please login first.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
 
     try {
-      setSubmitting(true);
-      await formService.submitForm(generatedForm._id, formData);
-      toast.success("Form submitted successfully!");
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-      // Reset form
-      setGeneratedForm(null);
-      setFormData({});
-      setSelectedImage(null);
-      setImagePreview(null);
-      setPastedText("");
-    } catch (error: any) {
-      if (error.response?.data?.errors) {
-        setFormErrors(error.response.data.errors);
-        toast.error("Please fix validation errors");
-      } else {
-        toast.error(error.response?.data?.message || "Failed to submit form");
+      const response = await axios.post(
+        `${apiUrl}/api/forms/generate-from-text`,
+        { pastedText },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const extractedFields = response.data.form?.fields || [];
+      const cleanedFields = extractedFields.map((field: any) => ({
+        label: field.label || field.fieldName || "Unnamed Field",
+        type: field.fieldType || field.type || "text",
+        required: field.required ?? false,
+      }));
+
+      // Capture the form ID and name from the response (generate-from-text creates form in DB)
+      const formId = response.data.form?._id;
+      const extractedFormName = response.data.form?.formName || "Extracted Form";
+      if (formId) {
+        setCurrentFormId(formId);
+        setFormName(extractedFormName);
+        console.log("✅ Form created with ID:", formId, "Name:", extractedFormName);
       }
+
+      setGeneratedForm(cleanedFields.length > 0 ? cleanedFields : defaultFormFields);
+      setActiveTab("form");
+      setError(null);
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || err.message || "Failed to extract form from text";
+      setError(`❌ ${errorMsg}`);
+      
+      if (err.response?.status === 401) {
+        console.error("Token invalid or expired. Redirecting to login...");
+        setTimeout(() => navigate("/login"), 2000);
+      }
+      
+      console.error(err);
     } finally {
-      setSubmitting(false);
+      setLoading(false);
+    }
+  };
+
+  // Update form name in database
+  const handleUpdateFormName = async () => {
+    if (!tempFormName.trim() || !currentFormId) {
+      setIsEditingFormName(false);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        alert("❌ Authentication required.");
+        return;
+      }
+
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      
+      const response = await fetch(`${apiUrl}/api/forms/${currentFormId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ formName: tempFormName.trim() }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setFormName(tempFormName.trim());
+        setIsEditingFormName(false);
+        console.log("✅ Form name updated:", tempFormName.trim());
+      } else {
+        console.error("❌ Failed to update form name:", result);
+        alert(`❌ Failed to update form name: ${result.message || "Unknown error"}`);
+        setIsEditingFormName(false);
+      }
+    } catch (error: any) {
+      console.error("❌ Error updating form name:", error);
+      alert(`❌ Error: ${error.message}`);
+      setIsEditingFormName(false);
+    }
+  };
+
+  // Handle form submission - Save to database (with file uploads)
+  const handleSubmit = async (data: any) => {
+    try {
+      console.log("📤 Form submit handler called with data:", data);
+
+      // Validate we have form ID
+      if (!currentFormId) {
+        alert("❌ No form extracted. Please upload or paste a form first.");
+        return;
+      }
+
+      // Get auth token
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        alert("❌ Authentication required. Please login.");
+        return;
+      }
+
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      
+      // Extract files from data
+      const files = data.__files || {};
+      delete data.__files;  // Remove files from data object
+      
+      console.log("📤 Submitting form data...", {
+        formId: currentFormId,
+        fields: Object.keys(data).length,
+        files: Object.keys(files).length,
+      });
+
+      // Use FormData if there are files
+      let response;
+      if (Object.keys(files).length > 0) {
+        const formData = new FormData();
+        formData.append("submittedData", JSON.stringify(data));
+        
+        // Append files with their field names
+        Object.entries(files).forEach(([fieldName, file]) => {
+          formData.append(fieldName, file as File);
+        });
+
+        response = await fetch(`${apiUrl}/api/forms/${currentFormId}/submit`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            // Don't set Content-Type - browser will set it with boundary for multipart/form-data
+          },
+          body: formData,
+        });
+      } else {
+        // No files - use JSON
+        response = await fetch(`${apiUrl}/api/forms/${currentFormId}/submit`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify({ submittedData: data }),
+        });
+      }
+
+      const result = await response.json();
+
+      if (response.ok) {
+        console.log("✅ Form submitted successfully:", result);
+        alert("✅ Form submitted and saved successfully!");
+        // Reset form
+        setCurrentFormId(null);
+        setGeneratedForm([]);
+        setActiveTab("upload");
+      } else {
+        console.error("❌ Backend error:", result);
+        alert(`❌ Failed to submit form: ${result.message || "Unknown error"}`);
+      }
+    } catch (error: any) {
+      console.error("❌ Form submission error:", error);
+      alert(`❌ Error submitting form: ${error.message}`);
     }
   };
 
@@ -214,8 +335,8 @@ export default function FormBuilder() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Dynamic Form Builder</h1>
-              <p className="text-sm text-slate-500 mt-1">AI-powered form extraction and auto-fill</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Smart Form Builder</h1>
+              <p className="text-sm text-slate-500 mt-1">Create form → Auto-fill from vault</p>
             </div>
             <div className="flex gap-2 sm:gap-3">
               <button
@@ -237,333 +358,322 @@ export default function FormBuilder() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-
-        {!generatedForm ? (
-          <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+        {/* Upload & Paste Tabs */}
+        {activeTab !== "form" && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             {/* Tab Navigation */}
-            <div className="flex gap-1 bg-slate-50 p-1 border-b border-slate-200">
+            <div className="flex gap-4 mb-8 border-b border-slate-200">
               <button
-                onClick={() => setActiveTab("image")}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all ${
-                  activeTab === "image"
-                    ? "bg-white text-blue-600 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+                onClick={() => setActiveTab("upload")}
+                className={`pb-3 px-4 flex items-center gap-2 font-medium transition ${
+                  activeTab === "upload"
+                    ? "border-b-2 border-blue-600 text-blue-600"
+                    : "text-slate-600 hover:text-slate-900"
                 }`}
               >
                 <Upload className="w-4 h-4" />
-                <span className="hidden sm:inline">Upload Form Image</span>
-                <span className="sm:hidden">Image</span>
+                Upload Form Image
               </button>
               <button
-                onClick={() => setActiveTab("text")}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all ${
-                  activeTab === "text"
-                    ? "bg-white text-blue-600 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+                onClick={() => setActiveTab("paste")}
+                className={`pb-3 px-4 flex items-center gap-2 font-medium transition ${
+                  activeTab === "paste"
+                    ? "border-b-2 border-blue-600 text-blue-600"
+                    : "text-slate-600 hover:text-slate-900"
                 }`}
               >
                 <FileText className="w-4 h-4" />
-                <span className="hidden sm:inline">Paste Form Text</span>
-                <span className="sm:hidden">Text</span>
+                Paste Form Content
               </button>
             </div>
 
-            <div className="p-4 sm:p-6">
+            {/* Error Message */}
+            {error && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-start gap-3">
+                <span>⚠️</span>
+                <span>{error}</span>
+                <button onClick={() => setError(null)} className="ml-auto">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
 
-            {/* Image Upload Tab */}
-            {activeTab === "image" && (
+            {/* Upload Tab */}
+            {activeTab === "upload" && (
               <div className="space-y-4">
-                {!imagePreview ? (
-                  <div
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleImageDrop}
-                    className={`border-2 border-dashed rounded-xl p-6 sm:p-12 text-center transition-all ${
-                      isDraggingImage
-                        ? "border-blue-500 bg-blue-50 scale-[0.98]"
-                        : "border-slate-300 hover:border-blue-400 hover:bg-slate-50"
-                    }`}
-                  >
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageSelect}
-                      className="hidden"
-                      id="form-image-upload"
-                    />
-                    <label
-                      htmlFor="form-image-upload"
-                      className="cursor-pointer flex flex-col items-center"
-                    >
-                      <Upload className="w-12 h-12 text-gray-400 mb-4" />
-                      <p className="text-lg font-medium text-gray-700 mb-2">
-                        Upload Form Screenshot or Photo
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Click to upload or drag and drop
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        PNG, JPG, GIF up to 10MB
-                      </p>
-                    </label>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">
-                      Selected Image:
-                    </p>
-                    <div
-                      className="border-2 border-dashed border-gray-300 rounded-lg p-3 bg-gray-50 flex flex-col items-center justify-center"
-                      style={{ minHeight: "300px", maxHeight: "400px" }}
-                    >
-                      <div
-                        style={{ overflowY: "auto" }}
-                        className="w-full flex items-center justify-center"
-                      >
-                        <img
-                          src={imagePreview}
-                          alt="Form preview"
-                          className="max-h-80 max-w-full rounded object-contain"
-                        />
-                      </div>
-                      <div className="mt-3 text-center">
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-lg p-12 text-center transition ${
+                    isDraggingImage
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-slate-300 hover:border-blue-400"
+                  }`}
+                >
+                  {!imagePreview ? (
+                    <>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        id="form-image-input"
+                      />
+                      <label htmlFor="form-image-input" className="cursor-pointer">
+                        <Upload className="w-12 h-12 mx-auto mb-3 text-slate-400" />
+                        <p className="text-slate-700 font-medium">Click to upload or drag and drop</p>
+                        <p className="text-xs text-slate-500 mt-1">PNG, JPG, JPEG up to 10MB</p>
+                      </label>
+                    </>
+                  ) : (
+                    <div className="space-y-4">
+                      <img
+                        src={imagePreview}
+                        alt="Form preview"
+                        className="max-h-80 mx-auto rounded-lg"
+                      />
+                      <div className="flex gap-2 justify-center">
                         <input
                           type="file"
                           accept="image/*"
-                          onChange={handleImageSelect}
+                          onChange={handleFileChange}
                           className="hidden"
-                          id="form-image-upload-2"
+                          id="form-image-input-2"
                         />
                         <label
-                          htmlFor="form-image-upload-2"
-                          className="text-xs text-blue-600 hover:underline cursor-pointer"
+                          htmlFor="form-image-input-2"
+                          className="px-4 py-2 text-sm bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 cursor-pointer transition"
                         >
                           Change Image
                         </label>
+                        <button
+                          onClick={() => {
+                            setSelectedImage(null);
+                            setImagePreview(null);
+                          }}
+                          className="px-4 py-2 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
+                        >
+                          Clear
+                        </button>
                       </div>
                     </div>
-                  </div>
-                )}
-
-                {/* Smart Detection Toggle */}
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200">
-                  <div className="flex items-center gap-3">
-                    <Sparkles className="w-5 h-5 text-purple-600" />
-                    <div>
-                      <h4 className="text-sm font-semibold text-slate-800">Smart Field Detection</h4>
-                      <p className="text-xs text-slate-600 mt-0.5">
-                        Filters UI noise like "Submit", "Choose File", etc.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setUseSmartDetection(!useSmartDetection)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      useSmartDetection ? 'bg-purple-600' : 'bg-gray-300'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        useSmartDetection ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
+                  )}
                 </div>
 
                 <button
-                  onClick={handleGenerateFromImage}
+                  onClick={handleExtractFromImage}
                   disabled={!selectedImage || loading}
-                  className="w-full py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-blue-600 disabled:hover:to-blue-700 flex items-center justify-center gap-2 font-medium shadow-lg shadow-blue-500/30 transition-all"
+                  className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-slate-400 transition font-medium flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Processing...
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Extracting Form Fields...
                     </>
                   ) : (
-                    "Generate Form"
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      Extract & Auto-Fill Form
+                    </>
                   )}
                 </button>
               </div>
             )}
 
-            {/* Text Paste Tab */}
-            {activeTab === "text" && (
+            {/* Paste Tab */}
+            {activeTab === "paste" && (
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Paste Form Structure
-                  </label>
-                  <textarea
-                    value={pastedText}
-                    onChange={(e) => setPastedText(e.target.value)}
-                    placeholder={`Paste form fields here, for example:
-
-Name:
-Date of Birth:
-Phone Number:
-Email:
-Address:
-City:
-State:
-PIN Code:
-
-Or use bullet points:
-• Full Name
-• Mobile Number
-• Aadhaar Number`}
-                    rows={12}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <button
-                  onClick={handleGenerateFromText}
-                  disabled={!pastedText.trim() || loading}
-                  className="w-full py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-blue-600 disabled:hover:to-blue-700 flex items-center justify-center gap-2 font-medium shadow-lg shadow-blue-500/30 transition-all"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    "Generate Form"
-                  )}
-                </button>
-              </div>
-            )}
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-            {/* Form Preview - Takes 2 columns on large screens */}
-            <div className="lg:col-span-2 bg-white rounded-xl shadow-lg border border-slate-200 p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
-                    {generatedForm.formName}
-                  </h2>
-                  <p className="text-sm text-slate-500 mt-1">
-                    {generatedForm.fields.length} fields detected • Auto-fill enabled
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    setGeneratedForm(null);
-                    setFormData({});
-                  }}
-                  className="text-sm text-blue-600 hover:text-blue-700 hover:underline font-medium self-start sm:self-auto"
-                >
-                  Start Over
-                </button>
-              </div>
-
-              <form onSubmit={(e) => e.preventDefault()}>
-                <ProgressiveFormRenderer
-                  fields={generatedForm.fields}
-                  formData={formData}
-                  onChange={handleFieldChange}
-                  onAlternativeRequest={handleShowAlternatives}
-                  errors={formErrors}
-                  fieldsPerSection={5}
+                <textarea
+                  value={pastedText}
+                  onChange={(e) => setPastedText(e.target.value)}
+                  placeholder="Paste your form content here... (field names, separated by lines or commas)"
+                  className="w-full h-40 p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                 />
 
                 <button
-                  onClick={handleSubmitForm}
-                  disabled={submitting}
-                  className="sticky bottom-4 w-full mt-6 py-4 bg-gradient-to-r from-green-600 via-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:via-green-700 hover:to-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2 font-bold text-lg shadow-2xl shadow-green-500/30 transition-all hover:scale-[1.02] disabled:hover:scale-100"
+                  onClick={handleExtractFromText}
+                  disabled={!pastedText.trim() || loading}
+                  className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-slate-400 transition font-medium flex items-center justify-center gap-2"
                 >
-                  {submitting ? (
+                  {loading ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Submitting...
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Extracting Form Fields...
                     </>
                   ) : (
                     <>
-                      <Send className="w-5 h-5" />
-                      Submit Form
+                      <Sparkles className="w-4 h-4" />
+                      Extract & Auto-Fill Form
                     </>
                   )}
                 </button>
-              </form>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Form Display with Auto-Fill */}
+        {activeTab === "form" && generatedForm.length > 0 && (
+          <div>
+            {/* Form Name Editor */}
+            <div className="mb-6 bg-white rounded-lg shadow-md p-6">
+              <div className="flex items-center justify-between">
+                {isEditingFormName ? (
+                  <div className="flex items-center gap-3 flex-1">
+                    <input
+                      type="text"
+                      value={tempFormName}
+                      onChange={(e) => setTempFormName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleUpdateFormName();
+                        if (e.key === "Escape") setIsEditingFormName(false);
+                      }}
+                      className="flex-1 px-4 py-2 text-xl font-bold border-2 border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter form name"
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleUpdateFormName}
+                      className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition"
+                      title="Save"
+                    >
+                      <Check className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setIsEditingFormName(false)}
+                      className="p-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition"
+                      title="Cancel"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-2xl font-bold text-slate-800">{formName}</h2>
+                    <button
+                      onClick={() => {
+                        setTempFormName(formName);
+                        setIsEditingFormName(true);
+                      }}
+                      className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                      title="Edit form name"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <p className="text-sm text-slate-500 mt-2">
+                {generatedForm.length} {generatedForm.length === 1 ? "field" : "fields"}
+              </p>
             </div>
 
-            {/* Auto-Fill Preview - Sidebar on large screens */}
-            <div className="lg:col-span-1 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-lg border border-blue-100 p-4 sm:p-6">
-              <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                Auto-Filled Data
-              </h3>
-              <div className="space-y-3 max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
-                {generatedForm.fields.map((field: any) => {
-                  const value = formData[field.label];
-                  return (
-                    <div key={field.label} className="bg-white p-3 rounded-lg shadow-sm border border-slate-100 hover:shadow-md transition">
-                      <p className="text-sm font-semibold text-slate-700">
-                        {field.label}
-                      </p>
-                      {value ? (
-                        <p className="text-sm text-slate-900 mt-1 flex items-start gap-1">
-                          <span className="text-green-500 mt-0.5">✓</span>
-                          <span className="break-words">{String(value).substring(0, 50)}{String(value).length > 50 ? '...' : ''}</span>
-                        </p>
-                      ) : (
-                        <p className="text-sm text-slate-400 mt-1 italic">Not filled</p>
-                      )}
-                      {field.vaultValue && (
-                        <p className="text-xs text-green-600 mt-1.5 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                          Mapped from {field.mappingType}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+            <div className="mb-4 flex items-center justify-end">
+              <button
+                onClick={() => {
+                  setActiveTab("upload");
+                  setGeneratedForm([]);
+                  setSelectedImage(null);
+                  setImagePreview(null);
+                  setPastedText("");
+                  setFormName("Extracted Form");
+                  setCurrentFormId(null);
+                }}
+                className="px-4 py-2 text-sm bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition"
+              >
+                Create New Form
+              </button>
             </div>
+
+            <FormBuilderEnhanced
+              initialFormFields={generatedForm}
+              onSubmit={handleSubmit}
+            />
+          </div>
+        )}
+
+        {/* Default Form (if no form generated) */}
+        {activeTab === "form" && generatedForm.length === 0 && (
+          <div>
+            {/* Form Name Editor */}
+            <div className="mb-6 bg-white rounded-lg shadow-md p-6">
+              <div className="flex items-center justify-between">
+                {isEditingFormName ? (
+                  <div className="flex items-center gap-3 flex-1">
+                    <input
+                      type="text"
+                      value={tempFormName}
+                      onChange={(e) => setTempFormName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleUpdateFormName();
+                        if (e.key === "Escape") setIsEditingFormName(false);
+                      }}
+                      className="flex-1 px-4 py-2 text-xl font-bold border-2 border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter form name"
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleUpdateFormName}
+                      className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition"
+                      title="Save"
+                    >
+                      <Check className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setIsEditingFormName(false)}
+                      className="p-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition"
+                      title="Cancel"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-2xl font-bold text-slate-800">{formName}</h2>
+                    <button
+                      onClick={() => {
+                        setTempFormName(formName);
+                        setIsEditingFormName(true);
+                      }}
+                      className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                      title="Edit form name"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <p className="text-sm text-slate-500 mt-2">
+                {defaultFormFields.length} {defaultFormFields.length === 1 ? "field" : "fields"} (default)
+              </p>
+            </div>
+
+            <div className="mb-4 flex items-center justify-end">
+              <button
+                onClick={() => {
+                  setActiveTab("upload");
+                  setGeneratedForm([]);
+                  setSelectedImage(null);
+                  setImagePreview(null);
+                  setPastedText("");
+                  setFormName("Extracted Form");
+                  setCurrentFormId(null);
+                }}
+                className="px-4 py-2 text-sm bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition"
+              >
+                Create New Form
+              </button>
+            </div>
+
+            <FormBuilderEnhanced
+              initialFormFields={defaultFormFields}
+              onSubmit={handleSubmit}
+            />
           </div>
         )}
       </div>
-
-      {/* Alternatives Modal */}
-      {showAlternatives && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 transform transition-all">
-            <h3 className="text-lg font-bold text-slate-800 mb-4">
-              Alternative Values for <span className="text-blue-600">{alternativesField}</span>
-            </h3>
-            {alternatives.length > 0 ? (
-              <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
-                {alternatives.map((alt, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSelectAlternative(alt.value)}
-                    className="w-full text-left p-3 border border-slate-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition shadow-sm hover:shadow"
-                  >
-                    <p className="font-medium text-slate-900">{alt.value}</p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      From: {alt.source || alt.fieldName}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="text-slate-500 text-center py-8 text-sm">
-                No alternative values found
-              </p>
-            )}
-            <button
-              onClick={() => setShowAlternatives(false)}
-              className="w-full mt-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 font-medium text-slate-700 transition"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

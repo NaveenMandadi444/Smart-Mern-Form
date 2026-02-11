@@ -238,9 +238,9 @@ export default function DataVault() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="flex items-center justify-center h-screen bg-slate-50">
         <div className="text-center">
-          <div className="inline-block p-4 bg-white rounded-2xl shadow-sm mb-4">
+          <div className="inline-block p-4 bg-white rounded-xl shadow-sm mb-4">
             <svg className="animate-spin h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -253,11 +253,11 @@ export default function DataVault() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <header className="bg-white border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate('/dashboard')}
@@ -267,20 +267,13 @@ export default function DataVault() {
                 <ArrowLeft className="w-5 h-5 text-slate-600" />
               </button>
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                    <Database className="w-5 h-5 text-white" />
-                  </div>
-                  <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Data Vault</h1>
-                </div>
-                <p className="text-sm text-slate-600 ml-12">Manage your stored documents and fields securely</p>
+                <h1 className="text-3xl font-bold text-slate-900">Data Vault</h1>
+                <p className="text-base text-slate-600 mt-1">Manage your stored documents and fields securely</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
-                <Shield className="w-4 h-4 text-green-600" />
-                <span className="text-sm font-medium text-green-700">{sections.length} Sections</span>
-              </div>
+            <div className="flex items-center gap-2 bg-emerald-50 px-4 py-2.5 rounded-lg border border-emerald-200">
+              <Shield className="w-5 h-5 text-emerald-600" />
+              <span className="text-sm font-semibold text-emerald-700">{sections.length} Sections</span>
             </div>
           </div>
         </div>
@@ -291,14 +284,14 @@ export default function DataVault() {
 
         {sections.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-slate-200">
-            <div className="bg-gradient-to-br from-slate-100 to-slate-200 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <div className="bg-slate-100 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6">
               <Database className="w-10 h-10 text-slate-400" />
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">No vault sections found</h3>
             <p className="text-slate-600 mb-6">Start by uploading a document to populate your data vault</p>
             <button
               onClick={() => navigate('/dashboard')}
-              className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all shadow-sm font-medium"
+              className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm font-semibold"
             >
               Go to Dashboard
             </button>
@@ -307,13 +300,13 @@ export default function DataVault() {
           <>
             <div className="mb-6 flex items-center justify-between">
               <p className="text-sm text-slate-600">
-                <span className="font-semibold text-slate-800">{sections.reduce((acc, s) => acc + (s.fields?.length || 0), 0)}</span> total fields across <span className="font-semibold text-slate-800">{sections.length}</span> sections
+                <span className="font-semibold text-slate-900">{sections.reduce((acc, s) => acc + (s.fields?.length || 0), 0)}</span> total fields across <span className="font-semibold text-slate-900">{sections.length}</span> sections
               </p>
             </div>
             <div className="space-y-4">
             {sections.map((section: any, index: number) => (
-              <div key={section._id} className={`bg-white rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-all duration-300 ${sectionsLoaded ? 'fade-in-up' : 'opacity-0'}`} style={{ animationDelay: `${index * 50}ms` }}>
-                <div className="p-4 sm:p-5 flex items-center justify-between hover:bg-slate-50 transition-colors">
+              <div key={section._id} className={`bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all duration-200 ${sectionsLoaded ? 'fade-in-up' : 'opacity-0'}`} style={{ animationDelay: `${index * 50}ms` }}>
+                <div className="p-5 flex items-center justify-between hover:bg-slate-50 transition-colors">
                   <button
                     onClick={() =>
                       setExpandedSection(
@@ -322,19 +315,19 @@ export default function DataVault() {
                     }
                     className="flex-1 text-left"
                   >
-                    <h3 className="text-base sm:text-lg font-bold text-slate-800">{section.sectionType}</h3>
-                    <p className="text-xs sm:text-sm text-slate-600 mt-1">
+                    <h3 className="text-lg font-semibold text-slate-900">{section.sectionType}</h3>
+                    <p className="text-sm text-slate-600 mt-1">
                       {section.fields?.length || 0} fields
                     </p>
                   </button>
-                  <div className="flex gap-1 sm:gap-2 ml-4">
+                  <div className="flex gap-2 ml-4">
                     <button
                       onClick={() => handleDeleteSectionClick(section)}
                       disabled={actionLoading}
                       className="p-2 hover:bg-red-50 rounded-lg disabled:opacity-50 transition-colors"
                       title="Delete section"
                     >
-                      <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
+                      <Trash2 className="w-5 h-5 text-red-600" />
                     </button>
                     <ChevronDown
                       className={`w-5 h-5 text-slate-600 transition-transform duration-200 ${
@@ -345,7 +338,7 @@ export default function DataVault() {
                 </div>
 
                 {expandedSection === section._id && (
-                  <div className="border-t border-slate-200 p-4 space-y-3">
+                  <div className="border-t border-slate-200 p-5 space-y-3">
                     {section.fields && section.fields.length > 0 ? (
                       <>
                         {section.fields.map((field: any) => (

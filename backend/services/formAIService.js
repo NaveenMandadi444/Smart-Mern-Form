@@ -45,6 +45,43 @@ const placeholderPatterns = [
 ];
 
 /**
+ * 🧹 CLEAN AND NORMALIZE FIELD NAMES
+ * Removes formatting noise from extracted field labels
+ * Handles: colons, underscores, markdown, extra spaces
+ */
+const cleanFieldName = (fieldName) => {
+  if (!fieldName || typeof fieldName !== 'string') return '';
+  
+  // Skip section headers and invalid fields
+  if (fieldName.includes('🧾') || 
+      fieldName.includes('FORM') || 
+      fieldName.includes('---') || 
+      fieldName.includes('===') ||
+      fieldName.trim().length < 2) {
+    return '';
+  }
+  
+  // Clean: remove trailing/leading colons
+  let cleaned = fieldName
+    .replace(/[:;]+\s*$/g, '')           // Remove trailing colons/semicolons
+    .replace(/^[:;]+\s*/g, '')           // Remove leading colons/semicolons
+    .replace(/_{2,}/g, '')               // Remove multiple underscores
+    .replace(/\-{2,}/g, '')              // Remove multiple dashes
+    .replace(/(_{1,}[\s_]*)+$/g, '')     // Remove trailing underscores
+    .replace(/\*\*/g, '')                // Remove markdown bold
+    .replace(/__/g, '')                  // Remove markdown italic
+    .replace(/\s{2,}/g, ' ')             // Collapse multiple spaces
+    .trim();
+  
+  // If result is empty or all underscores, return empty
+  if (!cleaned || /^[_\-\s]*$/.test(cleaned)) {
+    return '';
+  }
+  
+  return cleaned;
+};
+
+/**
  * Section/Heading detection patterns - should NOT be fields
  * These are document structure elements, not form fields
  */
@@ -301,9 +338,13 @@ const parseFormStructureWithoutAI = (text) => {
   const colonMatches = processedLines.matchAll(colonPattern);
   
   for (const match of colonMatches) {
-    const label = match[1].trim();
+    let label = match[1].trim();
     const valueAfterColon = (match[3] || '').trim();
     const required = !!match[2];
+    
+    // 🧹 Clean the field name
+    label = cleanFieldName(label);
+    if (!label) continue;  // Skip if cleaning resulted in empty string
     
     // Skip if: placeholder line, already added, too short/long, value is just placeholder
     if (label && 
@@ -334,7 +375,11 @@ const parseFormStructureWithoutAI = (text) => {
   const bulletMatches = processedLines.matchAll(bulletPattern);
   
   for (const match of bulletMatches) {
-    const label = match[1].trim();
+    let label = match[1].trim();
+    
+    // 🧹 Clean the field name
+    label = cleanFieldName(label);
+    if (!label) continue;  // Skip if cleaning resulted in empty string
     
     if (label && 
         label.length > 2 && 
@@ -363,7 +408,11 @@ const parseFormStructureWithoutAI = (text) => {
   const numberedMatches = processedLines.matchAll(numberedPattern);
   
   for (const match of numberedMatches) {
-    const label = match[1].trim();
+    let label = match[1].trim();
+    
+    // 🧹 Clean the field name
+    label = cleanFieldName(label);
+    if (!label) continue;  // Skip if cleaning resulted in empty string
     
     if (label && 
         label.length > 2 && 
@@ -400,20 +449,24 @@ const parseFormStructureWithoutAI = (text) => {
     const uniqueCandidates = Array.from(new Set(candidates));
     
     uniqueCandidates.slice(0, 30).forEach((candidate) => {
-      if (!fieldSet.has(candidate)) {
-        const fieldType = detectFieldType(candidate);
-        const semanticTag = classifyFieldSemantic(candidate);
+      // 🧹 Clean the field name
+      let cleanedLabel = cleanFieldName(candidate);
+      if (!cleanedLabel) return;  // Skip if cleaning resulted in empty string
+      
+      if (!fieldSet.has(cleanedLabel)) {
+        const fieldType = detectFieldType(cleanedLabel);
+        const semanticTag = classifyFieldSemantic(cleanedLabel);
         fields.push({
-          label: candidate,
+          label: cleanedLabel,
           fieldType,
           required: false,
-          placeholder: generatePlaceholder(candidate),
-          vaultMappingKey: generateVaultKey(candidate),
+          placeholder: generatePlaceholder(cleanedLabel),
+          vaultMappingKey: generateVaultKey(cleanedLabel),
           semanticTag, // Add semantic classification
           confidence: 72, // Delimiter splitting: moderate confidence
           extractedFrom: 'REGEX_DELIMITER',
         });
-        fieldSet.add(candidate);
+        fieldSet.add(cleanedLabel);
       }
     });
   }

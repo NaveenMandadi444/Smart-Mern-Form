@@ -18,6 +18,7 @@ import {
   getContextAwareGuidance 
 } from "../services/fieldGuidanceService.js";
 import { getOrCreateSection } from "../services/documentVaultService.js";
+import { mapFormFields } from "../services/smartFieldMappingService.js";
 import path from "path";
 import fs from "fs/promises";
 import sharp from "sharp";
@@ -607,6 +608,42 @@ export const submitForm = async (req, res) => {
 
     const { sanitizedData, dataList } = normalizeSubmittedData(parsedSubmittedData);
 
+    // 🧠 Run smart field mapping
+    let fieldMappings = null;
+    let mappingSummary = null;
+    try {
+      console.log("🧠 Running smart field mapping...");
+      
+      // Prepare form fields for mapping
+      const formFieldsForMapping = form.fields.map((field) => ({
+        label: field.label,
+        type: field.type,
+      }));
+
+      // Fetch user's vault data for mapping reference
+      const vaultFields = await VaultField.find({ userId }).lean();
+      const vaultData = {};
+      vaultFields.forEach((vf) => {
+        const key = vf.semanticTag || vf.fieldName;
+        vaultData[key] = vf.fieldValue;
+      });
+
+      // Run mapping
+      const mappingResult = await mapFormFields(formFieldsForMapping, vaultData, true);
+      fieldMappings = mappingResult.mapped_fields;
+      mappingSummary = mappingResult.summary;
+
+      console.log("✅ Smart field mapping completed:", {
+        mapped: mappingSummary.mapped_count,
+        missing: mappingSummary.missing_count,
+        converted: mappingSummary.converted_count,
+        avgConfidence: mappingSummary.average_confidence,
+      });
+    } catch (mappingError) {
+      console.error("⚠️ Smart field mapping error (non-blocking):", mappingError.message);
+      // Continue without mapping if it fails - not critical
+    }
+
     // Create submission
     const submissionDate = new Date();
     const submission = new FormSubmission({
@@ -615,6 +652,8 @@ export const submitForm = async (req, res) => {
       submittedData: sanitizedData,
       submittedDataList: dataList,
       attachments,
+      fieldMappings: fieldMappings || [],
+      mappingSummary: mappingSummary || {},
       submissionDate,
       submissionMonth: `${submissionDate.getFullYear()}-${String(
         submissionDate.getMonth() + 1,

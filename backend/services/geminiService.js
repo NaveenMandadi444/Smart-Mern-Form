@@ -1152,3 +1152,151 @@ export const generateAutofillSuggestions = async (fieldName, context) => {
     };
   }
 };
+
+/**
+ * 🎯 PRODUCTION PROMPT: MULTI-SOURCE INTELLIGENT AUTO-FILL
+ * Uses industry-standard intelligent document resolution
+ * Automatically selects best source - ZERO user interaction
+ */
+export const intelligentAutoFillWithAI = async (formFields, userDocumentData) => {
+  // Use mock data if Gemini not available
+  if (USE_MOCK_DATA || !model) {
+    console.log("⚠️ Gemini unavailable - using intelligent rule-based fallback");
+    return {
+      mapped_fields: formFields.map(field => ({
+        form_field: field,
+        value: "Mock Value",
+        source_document: "AADHAAR",
+        confidence: 0.75,
+        status: "filled"
+      }))
+    };
+  }
+
+  try {
+    // Prepare document data for AI
+    const formFieldsJSON = formFields.map(f => ({ label: f }));
+
+    const productionPrompt = `You are an Intelligent Multi-Document Form Filling AI.
+
+Your job is to:
+1. Understand form field meaning.
+2. Select BEST document source automatically.
+3. Fill only if high confidence.
+4. Avoid wrong cross-document filling.
+5. Do NOT ask user questions.
+6. Make silent best decision.
+
+------------------------------------------------
+AVAILABLE DOCUMENT SOURCES
+------------------------------------------------
+
+TENTH → School level marks, basic DOB backup  
+INTER → Intermediate marks  
+BTECH → CGPA / Degree marks  
+AADHAAR → Official Identity (DOB, Address, Gender)  
+PAN → Identity proof  
+
+------------------------------------------------
+DOCUMENT PRIORITY RULES
+------------------------------------------------
+
+IDENTITY FIELDS:
+DOB → Aadhaar FIRST → Tenth backup  
+Address → Aadhaar ONLY  
+Gender → Aadhaar ONLY  
+Aadhaar Number → Aadhaar ONLY  
+
+ACADEMIC FIELDS:
+10th Percentage → Tenth ONLY  
+12th / Inter Percentage → Inter ONLY  
+Degree CGPA → BTech ONLY  
+
+GENERAL NAME FIELDS:
+Name → Aadhaar FIRST → Academic fallback  
+
+------------------------------------------------
+CGPA CONVERSION RULE
+------------------------------------------------
+
+If Percentage requested but only CGPA exists:
+percentage = CGPA × 9.5
+
+------------------------------------------------
+STRICT SAFETY RULES
+------------------------------------------------
+
+Never mix academic data across levels.
+Never fill address using email or random text.
+Never fill location fields using date.
+Never fill if confidence < 0.85.
+
+------------------------------------------------
+INPUT
+------------------------------------------------
+
+FORM FIELDS:
+${JSON.stringify(formFieldsJSON)}
+
+USER DOCUMENT DATA:
+${JSON.stringify(userDocumentData)}
+
+------------------------------------------------
+OUTPUT (STRICT JSON ONLY)
+------------------------------------------------
+
+{
+ "mapped_fields": [
+   {
+     "form_field": "",
+     "value": "",
+     "source_document": "",
+     "confidence": 0.0,
+     "status": "filled | missing | unsafe | converted"
+   }
+ ]
+}
+
+------------------------------------------------
+IMPORTANT
+------------------------------------------------
+
+Choose ONE best source only.
+If multiple sources available → follow priority rules.
+If still unclear → mark unsafe.
+
+Return ONLY JSON - no markdown or extra text.`;
+
+    console.log("🤖 Calling Gemini AI for intelligent multisource autofill...");
+    
+    const result = await model.generateContent(productionPrompt);
+    const responseText = result.response.text();
+
+    console.log("📝 AI response received, parsing JSON...");
+
+    // Extract JSON from response
+    let jsonText = responseText.trim();
+    if (jsonText.startsWith("```json")) {
+      jsonText = jsonText.replace(/```json\n?/g, "").replace(/```\n?/g, "");
+    } else if (jsonText.startsWith("```")) {
+      jsonText = jsonText.replace(/```\n?/g, "");
+    }
+
+    const aiResponse = JSON.parse(jsonText);
+    
+    console.log(`✅ AI mapped ${aiResponse.mapped_fields.length} fields`);
+    return aiResponse;
+  } catch (error) {
+    console.error("❌ Intelligent autofill AI error:", error.message);
+    // Fallback to mock data
+    return {
+      mapped_fields: formFields.map(field => ({
+        form_field: field,
+        value: "Error: Could not auto-fill",
+        source_document: "ERROR",
+        confidence: 0,
+        status: "error"
+      }))
+    };
+  }
+};

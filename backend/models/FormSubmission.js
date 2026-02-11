@@ -23,6 +23,24 @@ const formSubmissionSchema = new mongoose.Schema(
         value: mongoose.Schema.Types.Mixed,
       },
     ],
+    // Smart Field Mapping Metadata
+    fieldMappings: [
+      {
+        form_field: String,
+        standard_field: String,
+        value: mongoose.Schema.Types.Mixed,
+        confidence: Number,  // 0.0 to 1.0
+        status: String,      // 'filled', 'converted', 'missing'
+        field_type: String,
+      },
+    ],
+    mappingSummary: {
+      total_fields: Number,
+      mapped_count: Number,
+      missing_count: Number,
+      converted_count: Number,
+      average_confidence: Number,
+    },
     submittedAt: {
       type: Date,
       default: Date.now,
