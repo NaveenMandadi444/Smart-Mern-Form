@@ -1,8 +1,17 @@
 import { useState, useEffect } from "react";
 import { formService } from "../services/api";
 import { toast } from "sonner";
-import { Calendar, FileText, ChevronLeft, Eye, Trash2, Edit2, Download, File, Image as ImageIcon } from "lucide-react";
+import {
+  Calendar,
+  FileText,
+  ChevronLeft,
+  Eye,
+  Trash2,
+  Download,
+  File,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { API_CONFIG } from "../lib/constants";
 
 export default function FormHistory() {
   const navigate = useNavigate();
@@ -84,9 +93,24 @@ export default function FormHistory() {
       <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="text-center">
           <div className="inline-block p-4 bg-white rounded-2xl shadow-lg mb-4">
-            <svg className="animate-spin h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <svg
+              className="animate-spin h-10 w-10 text-blue-600"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
             </svg>
           </div>
           <p className="text-slate-600 font-medium">Loading submissions...</p>
@@ -96,10 +120,12 @@ export default function FormHistory() {
   }
 
   if (selectedSubmission) {
-    const submittedEntries =
-      selectedSubmission.submittedDataList?.length
-        ? selectedSubmission.submittedDataList.map((entry: any) => [entry.label, entry.value])
-        : Object.entries(selectedSubmission.submittedData || {});
+    const submittedEntries = selectedSubmission.submittedDataList?.length
+      ? selectedSubmission.submittedDataList.map((entry: any) => [
+          entry.label,
+          entry.value,
+        ])
+      : Object.entries(selectedSubmission.submittedData || {});
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -153,77 +179,106 @@ export default function FormHistory() {
 
             <div className="space-y-4">
               <h3 className="text-lg font-bold mb-4">Submitted Data</h3>
-              {submittedEntries.map(
-                ([label, value]: [string, any]) => (
-                  <div key={label} className="border-b pb-3">
-                    <p className="text-sm font-medium text-gray-700">{label}</p>
-                    <p className="text-gray-900 mt-1">
-                      {typeof value === 'object' && value.fileName ? (
-                        <span className="text-blue-600">📎 {value.fileName}</span>
-                      ) : Array.isArray(value) ? value.join(", ") : String(value)}
-                    </p>
-                  </div>
-                ),
-              )}
+              {submittedEntries.map(([label, value]: [string, any]) => (
+                <div key={label} className="border-b pb-3">
+                  <p className="text-sm font-medium text-gray-700">{label}</p>
+                  <p className="text-gray-900 mt-1">
+                    {typeof value === "object" && value.fileName ? (
+                      <span className="text-blue-600">📎 {value.fileName}</span>
+                    ) : Array.isArray(value) ? (
+                      value.join(", ")
+                    ) : (
+                      String(value)
+                    )}
+                  </p>
+                </div>
+              ))}
             </div>
 
             {/* File Attachments Section */}
-            {selectedSubmission.attachments && selectedSubmission.attachments.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-lg font-bold mb-4">File Attachments</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {selectedSubmission.attachments.map((attachment: any, index: number) => {
-                    const isImage = attachment.mimeType?.startsWith('image/');
-                    const isResume = (attachment.fieldLabel || '').toLowerCase().includes('resume') || 
-                                     (attachment.fieldLabel || '').toLowerCase().includes('cv') ||
-                                     (attachment.fileName || '').toLowerCase().includes('resume') ||
-                                     (attachment.fileName || '').toLowerCase().includes('cv');
-                    
-                    return (
-                      <div key={index} className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div className="flex items-start gap-3">
-                          {isImage ? (
-                            <div className="flex-shrink-0 w-16 h-16 bg-slate-100 rounded-lg overflow-hidden">
-                              <img 
-                                src={`http://localhost:5000/${attachment.filePath}`}
-                                alt={attachment.fileName}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                  (e.target as HTMLImageElement).parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center"><ImageIcon class="w-6 h-6 text-slate-400" /></div>';
-                                }}
-                              />
-                            </div>
-                          ) : (
-                            <div className="flex-shrink-0 w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center">
-                              <File className="w-8 h-8 text-slate-400" />
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-800 truncate">{attachment.fileName}</p>
-                            <p className="text-xs text-slate-500 mt-1">
-                              {attachment.fieldLabel}
-                              {isResume && <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">Resume</span>}
-                            </p>
-                            <p className="text-xs text-slate-400 mt-1">
-                              {(attachment.fileSize / 1024).toFixed(1)} KB
-                            </p>
-                          </div>
-                          <a
-                            href={`http://localhost:5000/${attachment.filePath}`}
-                            download={attachment.fileName}
-                            className="flex-shrink-0 p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                            onClick={(e) => e.stopPropagation()}
+            {selectedSubmission.attachments &&
+              selectedSubmission.attachments.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-bold mb-4">File Attachments</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {selectedSubmission.attachments.map(
+                      (attachment: any, index: number) => {
+                        const isImage =
+                          attachment.mimeType?.startsWith("image/");
+                        const isResume =
+                          (attachment.fieldLabel || "")
+                            .toLowerCase()
+                            .includes("resume") ||
+                          (attachment.fieldLabel || "")
+                            .toLowerCase()
+                            .includes("cv") ||
+                          (attachment.fileName || "")
+                            .toLowerCase()
+                            .includes("resume") ||
+                          (attachment.fileName || "")
+                            .toLowerCase()
+                            .includes("cv");
+
+                        return (
+                          <div
+                            key={index}
+                            className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                           >
-                            <Download className="w-4 h-4 text-blue-600" />
-                          </a>
-                        </div>
-                      </div>
-                    );
-                  })}
+                            <div className="flex items-start gap-3">
+                              {isImage ? (
+                                <div className="flex-shrink-0 w-16 h-16 bg-slate-100 rounded-lg overflow-hidden">
+                                  <img
+                                    src={`${API_CONFIG.BASE_URL}/${attachment.filePath}`}
+                                    alt={attachment.fileName}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      (
+                                        e.target as HTMLImageElement
+                                      ).style.display = "none";
+                                      (
+                                        e.target as HTMLImageElement
+                                      ).parentElement!.innerHTML =
+                                        '<div class="w-full h-full flex items-center justify-center"><ImageIcon class="w-6 h-6 text-slate-400" /></div>';
+                                    }}
+                                  />
+                                </div>
+                              ) : (
+                                <div className="flex-shrink-0 w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center">
+                                  <File className="w-8 h-8 text-slate-400" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-slate-800 truncate">
+                                  {attachment.fileName}
+                                </p>
+                                <p className="text-xs text-slate-500 mt-1">
+                                  {attachment.fieldLabel}
+                                  {isResume && (
+                                    <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+                                      Resume
+                                    </span>
+                                  )}
+                                </p>
+                                <p className="text-xs text-slate-400 mt-1">
+                                  {(attachment.fileSize / 1024).toFixed(1)} KB
+                                </p>
+                              </div>
+                              <a
+                                href={`${API_CONFIG.BASE_URL}/${attachment.filePath}`}
+                                download={attachment.fileName}
+                                className="flex-shrink-0 p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Download className="w-4 h-4 text-blue-600" />
+                              </a>
+                            </div>
+                          </div>
+                        );
+                      },
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {selectedSubmission.notes && (
               <div className="mt-6 p-4 bg-slate-50 rounded-lg">
@@ -243,8 +298,13 @@ export default function FormHistory() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">Form Submission History</h1>
-              <p className="text-sm text-slate-500 mt-1">{submissions.length} submission{submissions.length !== 1 ? 's' : ''} found</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
+                Form Submission History
+              </h1>
+              <p className="text-sm text-slate-500 mt-1">
+                {submissions.length} submission
+                {submissions.length !== 1 ? "s" : ""} found
+              </p>
             </div>
             <div className="flex gap-2">
               <button
@@ -265,7 +325,6 @@ export default function FormHistory() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-
         {/* Filter Tabs */}
         <div className="bg-white rounded-xl shadow-md border border-slate-200 mb-6 p-4">
           <div className="flex gap-2 flex-wrap">
@@ -343,8 +402,9 @@ export default function FormHistory() {
 
                 <div className="border-t pt-4">
                   <p className="text-sm text-gray-600 mb-2">
-                    {(submission.submittedDataList?.length || Object.keys(submission.submittedData || {}).length)} fields
-                    submitted
+                    {submission.submittedDataList?.length ||
+                      Object.keys(submission.submittedData || {}).length}{" "}
+                    fields submitted
                   </p>
                   <div className="flex items-center gap-2">
                     <button className="text-sm text-blue-600 hover:underline flex items-center gap-1">
@@ -407,8 +467,12 @@ export default function FormHistory() {
                 <Trash2 className="w-6 h-6 text-red-600" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-800">Delete Submission</h3>
-                <p className="text-sm text-slate-500">This action cannot be undone</p>
+                <h3 className="text-lg font-bold text-slate-800">
+                  Delete Submission
+                </h3>
+                <p className="text-sm text-slate-500">
+                  This action cannot be undone
+                </p>
               </div>
             </div>
 

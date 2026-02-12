@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import FieldWithSourceSelection from './FieldWithSourceSelection';
-import { AlertCircle, Loader } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import FieldWithSourceSelection from "./FieldWithSourceSelection";
+import { AlertCircle, Loader } from "lucide-react";
 
 interface FieldData {
   formField: string;
@@ -17,7 +17,7 @@ interface FieldData {
     id: string;
   }>;
   totalSources: number;
-  status: 'filled' | 'missing';
+  status: "filled" | "missing";
   userCanOverride: boolean;
 }
 
@@ -50,9 +50,9 @@ export default function FormWithSourceSelection({
     setError(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        setError('Authentication required. Please login first.');
+        setError("Authentication required. Please login first.");
         setLoading(false);
         return;
       }
@@ -63,12 +63,12 @@ export default function FormWithSourceSelection({
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
-        }
+        },
       );
 
-      console.log('✅ Auto-fill complete with alternatives:', response.data);
+      console.log("✅ Auto-fill complete with alternatives:", response.data);
       setFieldsData(response.data.fields);
       setSummary(response.data.summary);
 
@@ -84,10 +84,10 @@ export default function FormWithSourceSelection({
       });
       setSelectedVariants(initial);
     } catch (err: any) {
-      console.error('❌ Auto-fill error:', err);
+      console.error("❌ Auto-fill error:", err);
       setError(
         err.response?.data?.error ||
-          'Failed to auto-fill form. Please try again.'
+          "Failed to auto-fill form. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -98,10 +98,10 @@ export default function FormWithSourceSelection({
   async function changeFieldSource(
     fieldName: string,
     newValue: string,
-    newSource: string
+    newSource: string,
   ) {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
 
       // Track this selection in backend
       await axios.post(
@@ -114,9 +114,9 @@ export default function FormWithSourceSelection({
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       // Update UI
@@ -130,8 +130,8 @@ export default function FormWithSourceSelection({
 
       console.log(`✅ Changed ${fieldName} to ${newSource}`);
     } catch (err: any) {
-      console.error('Error changing source:', err);
-      setError('Failed to change field source. Please try again.');
+      console.error("Error changing source:", err);
+      setError("Failed to change field source. Please try again.");
     }
   }
 
@@ -141,11 +141,11 @@ export default function FormWithSourceSelection({
 
     // Compile form data with selected values
     const formData: Record<string, string> = {};
-    selectedVariants.forEach((fieldData, fieldName) => {
+    Object.entries(selectedVariants).forEach(([fieldName, fieldData]) => {
       formData[fieldName] = fieldData.value;
     });
 
-    console.log('📤 Submitting form with data:', formData);
+    console.log("📤 Submitting form with data:", formData);
 
     if (onSubmit) {
       onSubmit(formData);
@@ -216,9 +216,7 @@ export default function FormWithSourceSelection({
               </div>
               <div>
                 <p className="text-2xl font-bold text-green-600">
-                  {Math.round(
-                    (summary.filled / summary.total) * 100
-                  )}%
+                  {Math.round((summary.filled / summary.total) * 100)}%
                 </p>
                 <p className="text-gray-600 text-sm">Success</p>
               </div>
@@ -261,7 +259,9 @@ export default function FormWithSourceSelection({
 
         {/* FOOTER */}
         <div className="mt-8 text-center text-gray-600 text-sm">
-          <p>💡 Tip: Click on any field to see alternatives from other documents</p>
+          <p>
+            💡 Tip: Click on any field to see alternatives from other documents
+          </p>
         </div>
       </div>
     </div>

@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  Sparkles, 
-  Shield, 
-  Zap, 
-  Upload, 
-  FileText, 
+import {
+  Sparkles,
+  Shield,
+  Zap,
+  Upload,
+  FileText,
   CheckCircle,
   ArrowRight,
   Play,
@@ -14,7 +14,7 @@ import {
   Star,
   Users,
   TrendingUp,
-  Clock
+  Clock,
 } from "lucide-react";
 import "../styles/animations.css";
 
@@ -23,14 +23,13 @@ export default function Landing() {
   const [scrollY, setScrollY] = useState(0);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeFeature, setActiveFeature] = useState(0);
-  
+
   // Refs for intersection observer
   const statsRef = useRef<HTMLElement>(null);
   const featuresRef = useRef<HTMLElement>(null);
   const howItWorksRef = useRef<HTMLElement>(null);
   const ctaRef = useRef<HTMLElement>(null);
-  
+
   // Visibility states
   const [statsVisible, setStatsVisible] = useState(false);
   const [featuresVisible, setFeaturesVisible] = useState(false);
@@ -43,18 +42,11 @@ export default function Landing() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveFeature((prev) => (prev + 1) % 3);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
   // Intersection Observer for lazy loading sections
   useEffect(() => {
     const observerOptions = {
       threshold: 0.1,
-      rootMargin: '0px 0px -100px 0px'
+      rootMargin: "0px 0px -100px 0px",
     };
 
     const observer = new IntersectionObserver((entries) => {
@@ -62,7 +54,8 @@ export default function Landing() {
         if (entry.isIntersecting) {
           if (entry.target === statsRef.current) setStatsVisible(true);
           if (entry.target === featuresRef.current) setFeaturesVisible(true);
-          if (entry.target === howItWorksRef.current) setHowItWorksVisible(true);
+          if (entry.target === howItWorksRef.current)
+            setHowItWorksVisible(true);
           if (entry.target === ctaRef.current) setCtaVisible(true);
         }
       });
@@ -80,49 +73,89 @@ export default function Landing() {
     {
       icon: <Upload className="w-8 h-8" />,
       title: "Smart Document Upload",
-      description: "Upload any document - Aadhaar, PAN, Passport, Certificates. AI extracts data instantly.",
-      color: "from-blue-500 to-cyan-500"
+      description:
+        "Upload any document - Aadhaar, PAN, Passport, Certificates. AI extracts data instantly.",
+      color: "from-blue-500 to-cyan-500",
     },
     {
       icon: <Sparkles className="w-8 h-8" />,
       title: "AI-Powered Form Detection",
-      description: "Upload form images or paste text. AI understands structure and creates fillable forms.",
-      color: "from-purple-500 to-pink-500"
+      description:
+        "Upload form images or paste text. AI understands structure and creates fillable forms.",
+      color: "from-purple-500 to-pink-500",
     },
     {
       icon: <Zap className="w-8 h-8" />,
       title: "Instant Auto-Fill",
-      description: "Forms auto-filled with your vault data. Semantic matching ensures 100% accuracy.",
-      color: "from-orange-500 to-red-500"
+      description:
+        "Forms auto-filled with your vault data. Semantic matching ensures 100% accuracy.",
+      color: "from-orange-500 to-red-500",
     },
     {
       icon: <Shield className="w-8 h-8" />,
       title: "Secure Data Vault",
-      description: "Your data encrypted and stored securely. Access anytime, anywhere.",
-      color: "from-green-500 to-emerald-500"
-    }
+      description:
+        "Your data encrypted and stored securely. Access anytime, anywhere.",
+      color: "from-green-500 to-emerald-500",
+    },
   ];
 
   const stats = [
-    { label: "Forms Filled", value: "10,000+", icon: <FileText className="w-6 h-6" /> },
-    { label: "Happy Users", value: "2,500+", icon: <Users className="w-6 h-6" /> },
-    { label: "Time Saved", value: "50,000hrs", icon: <Clock className="w-6 h-6" /> },
-    { label: "Accuracy Rate", value: "99.9%", icon: <TrendingUp className="w-6 h-6" /> }
+    {
+      label: "Forms Filled",
+      value: "10,000+",
+      icon: <FileText className="w-6 h-6" />,
+    },
+    {
+      label: "Happy Users",
+      value: "2,500+",
+      icon: <Users className="w-6 h-6" />,
+    },
+    {
+      label: "Time Saved",
+      value: "50,000hrs",
+      icon: <Clock className="w-6 h-6" />,
+    },
+    {
+      label: "Accuracy Rate",
+      value: "99.9%",
+      icon: <TrendingUp className="w-6 h-6" />,
+    },
   ];
 
   const howItWorks = [
-    { step: "1", title: "Upload Documents", desc: "Upload your ID proofs and certificates" },
-    { step: "2", title: "AI Extracts Data", desc: "Our AI extracts and structures your information" },
-    { step: "3", title: "Upload Form", desc: "Upload any form image or paste form text" },
-    { step: "4", title: "Auto-Fill Magic", desc: "Watch your form get filled automatically" }
+    {
+      step: "1",
+      title: "Upload Documents",
+      desc: "Upload your ID proofs and certificates",
+    },
+    {
+      step: "2",
+      title: "AI Extracts Data",
+      desc: "Our AI extracts and structures your information",
+    },
+    {
+      step: "3",
+      title: "Upload Form",
+      desc: "Upload any form image or paste form text",
+    },
+    {
+      step: "4",
+      title: "Auto-Fill Magic",
+      desc: "Watch your form get filled automatically",
+    },
   ];
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
       {/* Navigation */}
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-        scrollY > 50 ? "bg-white/95 backdrop-blur-lg shadow-lg" : "bg-transparent"
-      }`}>
+      <nav
+        className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+          scrollY > 50
+            ? "bg-white/95 backdrop-blur-lg shadow-lg"
+            : "bg-transparent"
+        }`}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
@@ -136,9 +169,24 @@ export default function Landing() {
 
             {/* Desktop Menu */}
             <div className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-slate-700 hover:text-blue-600 font-medium transition">Features</a>
-              <a href="#how-it-works" className="text-slate-700 hover:text-blue-600 font-medium transition">How It Works</a>
-              <a href="#pricing" className="text-slate-700 hover:text-blue-600 font-medium transition">Pricing</a>
+              <a
+                href="#features"
+                className="text-slate-700 hover:text-blue-600 font-medium transition"
+              >
+                Features
+              </a>
+              <a
+                href="#how-it-works"
+                className="text-slate-700 hover:text-blue-600 font-medium transition"
+              >
+                How It Works
+              </a>
+              <a
+                href="#pricing"
+                className="text-slate-700 hover:text-blue-600 font-medium transition"
+              >
+                Pricing
+              </a>
               <button
                 onClick={() => navigate("/auth")}
                 className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg hover:scale-105 transition-all"
@@ -152,7 +200,11 @@ export default function Landing() {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 rounded-lg hover:bg-slate-100"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
             </button>
           </div>
         </div>
@@ -161,9 +213,24 @@ export default function Landing() {
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-t border-slate-200 shadow-lg">
             <div className="px-4 py-4 space-y-3">
-              <a href="#features" className="block py-2 text-slate-700 hover:text-blue-600 font-medium">Features</a>
-              <a href="#how-it-works" className="block py-2 text-slate-700 hover:text-blue-600 font-medium">How It Works</a>
-              <a href="#pricing" className="block py-2 text-slate-700 hover:text-blue-600 font-medium">Pricing</a>
+              <a
+                href="#features"
+                className="block py-2 text-slate-700 hover:text-blue-600 font-medium"
+              >
+                Features
+              </a>
+              <a
+                href="#how-it-works"
+                className="block py-2 text-slate-700 hover:text-blue-600 font-medium"
+              >
+                How It Works
+              </a>
+              <a
+                href="#pricing"
+                className="block py-2 text-slate-700 hover:text-blue-600 font-medium"
+              >
+                Pricing
+              </a>
               <button
                 onClick={() => navigate("/auth")}
                 className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium"
@@ -186,16 +253,18 @@ export default function Landing() {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
           {/* Badge */}
-          <div 
+          <div
             className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg mb-8 animate-fade-in-down"
             style={{ animationDelay: "0.1s" }}
           >
             <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-            <span className="text-sm font-semibold text-slate-700">Trusted by 2,500+ users</span>
+            <span className="text-sm font-semibold text-slate-700">
+              Trusted by 2,500+ users
+            </span>
           </div>
 
           {/* Hero Title */}
-          <h1 
+          <h1
             className="text-5xl sm:text-6xl lg:text-7xl font-extrabold mb-6 animate-fade-in-down"
             style={{ animationDelay: "0.2s" }}
           >
@@ -206,16 +275,19 @@ export default function Landing() {
             <span className="text-slate-800">Not Minutes</span>
           </h1>
 
-          <p 
+          <p
             className="text-xl sm:text-2xl text-slate-600 mb-12 max-w-3xl mx-auto animate-fade-in-down"
             style={{ animationDelay: "0.3s" }}
           >
-            Upload documents once. Let AI auto-fill any form instantly. 
-            <span className="font-semibold text-slate-800"> Save 10+ hours every week.</span>
+            Upload documents once. Let AI auto-fill any form instantly.
+            <span className="font-semibold text-slate-800">
+              {" "}
+              Save 10+ hours every week.
+            </span>
           </p>
 
           {/* CTA Buttons */}
-          <div 
+          <div
             className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-down"
             style={{ animationDelay: "0.4s" }}
           >
@@ -236,21 +308,27 @@ export default function Landing() {
           </div>
 
           {/* Trust Badges */}
-          <div 
+          <div
             className="mt-16 flex flex-wrap justify-center items-center gap-8 opacity-60 animate-fade-in"
             style={{ animationDelay: "0.5s" }}
           >
             <div className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-green-600" />
-              <span className="text-sm font-medium text-slate-700">No Credit Card Required</span>
+              <span className="text-sm font-medium text-slate-700">
+                No Credit Card Required
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-green-600" />
-              <span className="text-sm font-medium text-slate-700">Free Forever Plan</span>
+              <span className="text-sm font-medium text-slate-700">
+                Free Forever Plan
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-green-600" />
-              <span className="text-sm font-medium text-slate-700">100% Secure</span>
+              <span className="text-sm font-medium text-slate-700">
+                100% Secure
+              </span>
             </div>
           </div>
         </div>
@@ -264,19 +342,26 @@ export default function Landing() {
       </section>
 
       {/* Stats Section */}
-      <section ref={statsRef} className="py-20 bg-gradient-to-br from-blue-600 to-purple-600">
+      <section
+        ref={statsRef}
+        className="py-20 bg-gradient-to-br from-blue-600 to-purple-600"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {stats.map((stat, idx) => (
-              <div 
+              <div
                 key={idx}
-                className={`text-center transition-all duration-700 ${statsVisible ? 'fade-in-up' : 'opacity-0 translate-y-10'}`}
-                style={{ animationDelay: statsVisible ? `${idx * 100}ms` : '0ms' }}
+                className={`text-center transition-all duration-700 ${statsVisible ? "fade-in-up" : "opacity-0 translate-y-10"}`}
+                style={{
+                  animationDelay: statsVisible ? `${idx * 100}ms` : "0ms",
+                }}
               >
                 <div className="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-xl mb-4 text-white">
                   {stat.icon}
                 </div>
-                <div className="text-4xl font-bold text-white mb-2">{stat.value}</div>
+                <div className="text-4xl font-bold text-white mb-2">
+                  {stat.value}
+                </div>
                 <div className="text-blue-100 font-medium">{stat.label}</div>
               </div>
             ))}
@@ -287,7 +372,9 @@ export default function Landing() {
       {/* Features Section */}
       <section ref={featuresRef} id="features" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className={`text-center mb-16 transition-all duration-700 ${featuresVisible ? 'fade-in-up' : 'opacity-0 translate-y-10'}`}>
+          <div
+            className={`text-center mb-16 transition-all duration-700 ${featuresVisible ? "fade-in-up" : "opacity-0 translate-y-10"}`}
+          >
             <h2 className="text-4xl sm:text-5xl font-bold text-slate-800 mb-4">
               Powerful Features
             </h2>
@@ -300,16 +387,25 @@ export default function Landing() {
             {features.map((feature, idx) => (
               <div
                 key={idx}
-                className={`group relative bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-500 hover:-translate-y-2 border border-slate-100 cursor-pointer ${featuresVisible ? 'fade-in-up' : 'opacity-0 translate-y-10'}`}
-                style={{ animationDelay: featuresVisible ? `${idx * 100}ms` : '0ms' }}
-                onMouseEnter={() => setActiveFeature(idx)}
+                className={`group relative bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-500 hover:-translate-y-2 border border-slate-100 cursor-pointer ${featuresVisible ? "fade-in-up" : "opacity-0 translate-y-10"}`}
+                style={{
+                  animationDelay: featuresVisible ? `${idx * 100}ms` : "0ms",
+                }}
               >
-                <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity`}></div>
-                <div className={`w-16 h-16 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center text-white mb-4 group-hover:scale-110 transition-transform`}>
+                <div
+                  className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity`}
+                ></div>
+                <div
+                  className={`w-16 h-16 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center text-white mb-4 group-hover:scale-110 transition-transform`}
+                >
                   {feature.icon}
                 </div>
-                <h3 className="text-xl font-bold text-slate-800 mb-3">{feature.title}</h3>
-                <p className="text-slate-600 leading-relaxed">{feature.description}</p>
+                <h3 className="text-xl font-bold text-slate-800 mb-3">
+                  {feature.title}
+                </h3>
+                <p className="text-slate-600 leading-relaxed">
+                  {feature.description}
+                </p>
               </div>
             ))}
           </div>
@@ -317,9 +413,15 @@ export default function Landing() {
       </section>
 
       {/* How It Works Section */}
-      <section ref={howItWorksRef} id="how-it-works" className="py-20 bg-gradient-to-br from-slate-50 to-slate-100">
+      <section
+        ref={howItWorksRef}
+        id="how-it-works"
+        className="py-20 bg-gradient-to-br from-slate-50 to-slate-100"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className={`text-center mb-16 transition-all duration-700 ${howItWorksVisible ? 'fade-in-up' : 'opacity-0 translate-y-10'}`}>
+          <div
+            className={`text-center mb-16 transition-all duration-700 ${howItWorksVisible ? "fade-in-up" : "opacity-0 translate-y-10"}`}
+          >
             <h2 className="text-4xl sm:text-5xl font-bold text-slate-800 mb-4">
               How It Works
             </h2>
@@ -330,7 +432,13 @@ export default function Landing() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {howItWorks.map((item, idx) => (
-              <div key={idx} className={`relative transition-all duration-700 ${howItWorksVisible ? 'fade-in-up' : 'opacity-0 translate-y-10'}`} style={{ animationDelay: howItWorksVisible ? `${idx * 150}ms` : '0ms' }}>
+              <div
+                key={idx}
+                className={`relative transition-all duration-700 ${howItWorksVisible ? "fade-in-up" : "opacity-0 translate-y-10"}`}
+                style={{
+                  animationDelay: howItWorksVisible ? `${idx * 150}ms` : "0ms",
+                }}
+              >
                 {idx < howItWorks.length - 1 && (
                   <div className="hidden lg:block absolute top-12 left-full w-full h-0.5 bg-gradient-to-r from-blue-600 to-purple-600"></div>
                 )}
@@ -338,7 +446,9 @@ export default function Landing() {
                   <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mb-4">
                     {item.step}
                   </div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-2">{item.title}</h3>
+                  <h3 className="text-xl font-bold text-slate-800 mb-2">
+                    {item.title}
+                  </h3>
                   <p className="text-slate-600">{item.desc}</p>
                 </div>
               </div>
@@ -348,9 +458,14 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section ref={ctaRef} className="py-20 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden">
+      <section
+        ref={ctaRef}
+        className="py-20 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden"
+      >
         <div className="absolute inset-0 bg-grid-white/10"></div>
-        <div className={`relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center transition-all duration-700 ${ctaVisible ? 'fade-in-up' : 'opacity-0 translate-y-10'}`}>
+        <div
+          className={`relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center transition-all duration-700 ${ctaVisible ? "fade-in-up" : "opacity-0 translate-y-10"}`}
+        >
           <h2 className="text-4xl sm:text-5xl font-bold text-white mb-6">
             Ready to Save 10+ Hours Every Week?
           </h2>

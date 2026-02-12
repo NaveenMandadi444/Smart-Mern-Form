@@ -1,12 +1,24 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import FormBuilderEnhanced from "../components/FormBuilderEnhanced";
-import { Eye, Upload, FileText, Send, Loader2, Sparkles, X, Edit2, Check } from "lucide-react";
+import {
+  Eye,
+  Upload,
+  FileText,
+  Loader2,
+  Sparkles,
+  X,
+  Edit2,
+  Check,
+} from "lucide-react";
 import axios from "axios";
+import { API_CONFIG } from "../lib/constants";
 
 export default function FormBuilder() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"upload" | "paste" | "form">("upload");
+  const [activeTab, setActiveTab] = useState<"upload" | "paste" | "form">(
+    "upload",
+  );
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [pastedText, setPastedText] = useState<string>("");
@@ -94,7 +106,7 @@ export default function FormBuilder() {
       const formData = new FormData();
       formData.append("formImage", selectedImage);
 
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const apiUrl = API_CONFIG.BASE_URL;
 
       const response = await axios.post(
         `${apiUrl}/api/forms/smart-generate-from-image`,
@@ -104,7 +116,7 @@ export default function FormBuilder() {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       const extractedFields = response.data.form?.fields || [];
@@ -116,25 +128,36 @@ export default function FormBuilder() {
 
       // Capture the form ID and name from the response (smart-generate-from-image creates form in DB)
       const formId = response.data.form?._id;
-      const extractedFormName = response.data.form?.formName || "Extracted Form";
+      const extractedFormName =
+        response.data.form?.formName || "Extracted Form";
       if (formId) {
         setCurrentFormId(formId);
         setFormName(extractedFormName);
-        console.log("✅ Form created with ID:", formId, "Name:", extractedFormName);
+        console.log(
+          "✅ Form created with ID:",
+          formId,
+          "Name:",
+          extractedFormName,
+        );
       }
 
-      setGeneratedForm(cleanedFields.length > 0 ? cleanedFields : defaultFormFields);
+      setGeneratedForm(
+        cleanedFields.length > 0 ? cleanedFields : defaultFormFields,
+      );
       setActiveTab("form");
       setError(null);
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || err.message || "Failed to extract form from image";
+      const errorMsg =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to extract form from image";
       setError(`❌ ${errorMsg}`);
-      
+
       if (err.response?.status === 401) {
         console.error("Token invalid or expired. Redirecting to login...");
         setTimeout(() => navigate("/login"), 2000);
       }
-      
+
       console.error(err);
     } finally {
       setLoading(false);
@@ -159,7 +182,7 @@ export default function FormBuilder() {
     setError(null);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const apiUrl = API_CONFIG.BASE_URL;
 
       const response = await axios.post(
         `${apiUrl}/api/forms/generate-from-text`,
@@ -168,7 +191,7 @@ export default function FormBuilder() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       const extractedFields = response.data.form?.fields || [];
@@ -180,25 +203,36 @@ export default function FormBuilder() {
 
       // Capture the form ID and name from the response (generate-from-text creates form in DB)
       const formId = response.data.form?._id;
-      const extractedFormName = response.data.form?.formName || "Extracted Form";
+      const extractedFormName =
+        response.data.form?.formName || "Extracted Form";
       if (formId) {
         setCurrentFormId(formId);
         setFormName(extractedFormName);
-        console.log("✅ Form created with ID:", formId, "Name:", extractedFormName);
+        console.log(
+          "✅ Form created with ID:",
+          formId,
+          "Name:",
+          extractedFormName,
+        );
       }
 
-      setGeneratedForm(cleanedFields.length > 0 ? cleanedFields : defaultFormFields);
+      setGeneratedForm(
+        cleanedFields.length > 0 ? cleanedFields : defaultFormFields,
+      );
       setActiveTab("form");
       setError(null);
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || err.message || "Failed to extract form from text";
+      const errorMsg =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to extract form from text";
       setError(`❌ ${errorMsg}`);
-      
+
       if (err.response?.status === 401) {
         console.error("Token invalid or expired. Redirecting to login...");
         setTimeout(() => navigate("/login"), 2000);
       }
-      
+
       console.error(err);
     } finally {
       setLoading(false);
@@ -219,13 +253,13 @@ export default function FormBuilder() {
         return;
       }
 
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
-      
+      const apiUrl = API_CONFIG.BASE_URL;
+
       const response = await fetch(`${apiUrl}/api/forms/${currentFormId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ formName: tempFormName.trim() }),
       });
@@ -238,7 +272,9 @@ export default function FormBuilder() {
         console.log("✅ Form name updated:", tempFormName.trim());
       } else {
         console.error("❌ Failed to update form name:", result);
-        alert(`❌ Failed to update form name: ${result.message || "Unknown error"}`);
+        alert(
+          `❌ Failed to update form name: ${result.message || "Unknown error"}`,
+        );
         setIsEditingFormName(false);
       }
     } catch (error: any) {
@@ -266,12 +302,12 @@ export default function FormBuilder() {
         return;
       }
 
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
-      
+      const apiUrl = API_CONFIG.BASE_URL;
+
       // Extract files from data
       const files = data.__files || {};
-      delete data.__files;  // Remove files from data object
-      
+      delete data.__files; // Remove files from data object
+
       console.log("📤 Submitting form data...", {
         formId: currentFormId,
         fields: Object.keys(data).length,
@@ -283,7 +319,7 @@ export default function FormBuilder() {
       if (Object.keys(files).length > 0) {
         const formData = new FormData();
         formData.append("submittedData", JSON.stringify(data));
-        
+
         // Append files with their field names
         Object.entries(files).forEach(([fieldName, file]) => {
           formData.append(fieldName, file as File);
@@ -292,7 +328,7 @@ export default function FormBuilder() {
         response = await fetch(`${apiUrl}/api/forms/${currentFormId}/submit`, {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             // Don't set Content-Type - browser will set it with boundary for multipart/form-data
           },
           body: formData,
@@ -303,7 +339,7 @@ export default function FormBuilder() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ submittedData: data }),
         });
@@ -335,8 +371,12 @@ export default function FormBuilder() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Smart Form Builder</h1>
-              <p className="text-sm text-slate-500 mt-1">Create form → Auto-fill from vault</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-800">
+                Smart Form Builder
+              </h1>
+              <p className="text-sm text-slate-500 mt-1">
+                Create form → Auto-fill from vault
+              </p>
             </div>
             <div className="flex gap-2 sm:gap-3">
               <button
@@ -421,10 +461,17 @@ export default function FormBuilder() {
                         className="hidden"
                         id="form-image-input"
                       />
-                      <label htmlFor="form-image-input" className="cursor-pointer">
+                      <label
+                        htmlFor="form-image-input"
+                        className="cursor-pointer"
+                      >
                         <Upload className="w-12 h-12 mx-auto mb-3 text-slate-400" />
-                        <p className="text-slate-700 font-medium">Click to upload or drag and drop</p>
-                        <p className="text-xs text-slate-500 mt-1">PNG, JPG, JPEG up to 10MB</p>
+                        <p className="text-slate-700 font-medium">
+                          Click to upload or drag and drop
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          PNG, JPG, JPEG up to 10MB
+                        </p>
                       </label>
                     </>
                   ) : (
@@ -551,7 +598,9 @@ export default function FormBuilder() {
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <h2 className="text-2xl font-bold text-slate-800">{formName}</h2>
+                    <h2 className="text-2xl font-bold text-slate-800">
+                      {formName}
+                    </h2>
                     <button
                       onClick={() => {
                         setTempFormName(formName);
@@ -566,7 +615,8 @@ export default function FormBuilder() {
                 )}
               </div>
               <p className="text-sm text-slate-500 mt-2">
-                {generatedForm.length} {generatedForm.length === 1 ? "field" : "fields"}
+                {generatedForm.length}{" "}
+                {generatedForm.length === 1 ? "field" : "fields"}
               </p>
             </div>
 
@@ -631,7 +681,9 @@ export default function FormBuilder() {
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <h2 className="text-2xl font-bold text-slate-800">{formName}</h2>
+                    <h2 className="text-2xl font-bold text-slate-800">
+                      {formName}
+                    </h2>
                     <button
                       onClick={() => {
                         setTempFormName(formName);
@@ -646,7 +698,8 @@ export default function FormBuilder() {
                 )}
               </div>
               <p className="text-sm text-slate-500 mt-2">
-                {defaultFormFields.length} {defaultFormFields.length === 1 ? "field" : "fields"} (default)
+                {defaultFormFields.length}{" "}
+                {defaultFormFields.length === 1 ? "field" : "fields"} (default)
               </p>
             </div>
 

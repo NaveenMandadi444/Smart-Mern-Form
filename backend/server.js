@@ -34,6 +34,15 @@ import fieldMappingRoutes from "./routes/fieldMappingRoutes.js";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const allowedOrigins = (
+  process.env.FRONTEND_URLS ||
+  process.env.FRONTEND_URL ||
+  ""
+)
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 // CORS configuration
 const corsOptions = {
   origin: (origin, callback) => {
@@ -47,8 +56,8 @@ const corsOptions = {
       }
     }
 
-    // In production, check against FRONTEND_URL
-    if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) {
+    // In production, check against allowed frontend origins
+    if (allowedOrigins.length > 0 && allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
@@ -76,7 +85,7 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 connectDB();
 
 // Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Health check
 app.get("/health", (req, res) => {

@@ -1,5 +1,4 @@
-import React from 'react';
-import { CheckCircle, Circle } from 'lucide-react';
+import { CheckCircle, Circle } from "lucide-react";
 
 interface Alternative {
   value: string;
@@ -22,26 +21,26 @@ export default function AlternativesDropdown({
   // Get source color
   function getSourceColor(source: string): string {
     const colors: Record<string, string> = {
-      AADHAAR: 'bg-green-50 border-green-200 hover:bg-green-100',
-      PASSPORT: 'bg-blue-50 border-blue-200 hover:bg-blue-100',
-      PAN: 'bg-purple-50 border-purple-200 hover:bg-purple-100',
-      TENTH: 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100',
-      INTER: 'bg-orange-50 border-orange-200 hover:bg-orange-100',
-      DEGREE: 'bg-indigo-50 border-indigo-200 hover:bg-indigo-100',
+      AADHAAR: "bg-green-50 border-green-200 hover:bg-green-100",
+      PASSPORT: "bg-blue-50 border-blue-200 hover:bg-blue-100",
+      PAN: "bg-purple-50 border-purple-200 hover:bg-purple-100",
+      TENTH: "bg-yellow-50 border-yellow-200 hover:bg-yellow-100",
+      INTER: "bg-orange-50 border-orange-200 hover:bg-orange-100",
+      DEGREE: "bg-indigo-50 border-indigo-200 hover:bg-indigo-100",
     };
-    return colors[source] || 'bg-gray-50 border-gray-200 hover:bg-gray-100';
+    return colors[source] || "bg-gray-50 border-gray-200 hover:bg-gray-100";
   }
 
   function getSourceDotColor(source: string): string {
     const colors: Record<string, string> = {
-      AADHAAR: 'text-green-600',
-      PASSPORT: 'text-blue-600',
-      PAN: 'text-purple-600',
-      TENTH: 'text-yellow-600',
-      INTER: 'text-orange-600',
-      DEGREE: 'text-indigo-600',
+      AADHAAR: "text-green-600",
+      PASSPORT: "text-blue-600",
+      PAN: "text-purple-600",
+      TENTH: "text-yellow-600",
+      INTER: "text-orange-600",
+      DEGREE: "text-indigo-600",
     };
-    return colors[source] || 'text-gray-600';
+    return colors[source] || "text-gray-600";
   }
 
   return (
@@ -57,7 +56,7 @@ export default function AlternativesDropdown({
             onClick={() => onSelect(alt.value, alt.source)}
             className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
               alt.source === currentSource
-                ? 'border-green-500 bg-green-50 ring-2 ring-green-200'
+                ? "border-green-500 bg-green-50 ring-2 ring-green-200"
                 : `border-gray-200 ${getSourceColor(alt.source)}`
             }`}
           >
@@ -65,9 +64,13 @@ export default function AlternativesDropdown({
               {/* ICON */}
               <div className="flex-shrink-0 mt-0.5">
                 {alt.source === currentSource ? (
-                  <CheckCircle className={`w-5 h-5 ${getSourceDotColor(alt.source)}`} />
+                  <CheckCircle
+                    className={`w-5 h-5 ${getSourceDotColor(alt.source)}`}
+                  />
                 ) : (
-                  <Circle className={`w-5 h-5 ${getSourceDotColor(alt.source)}`} />
+                  <Circle
+                    className={`w-5 h-5 ${getSourceDotColor(alt.source)}`}
+                  />
                 )}
               </div>
 
